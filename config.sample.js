@@ -15,6 +15,8 @@ config.tmi = {
     channels: ["#decicus"]
 };
 
+config.clientId = '';
+
 config.admins = ['decicus'];
 
 config.channelsFile = './channels.json';
