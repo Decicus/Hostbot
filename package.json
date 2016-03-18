@@ -1,0 +1,15 @@
+{
+  "name": "twitch-hostbot",
+  "version": "0.0.1",
+  "description": "A Twitch chatbot just for hosting channels",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alex Thomassen",
+  "license": "MIT",
+  "dependencies": {
+    "request": "^2.69.0",
+    "tmi.js": "0.0.28"
+  }
+}
