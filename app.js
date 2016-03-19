@@ -84,7 +84,7 @@ var commands = {
 };
 
 function quit() {
-    client.say(hostChannel, user['display-name'] + " - Exiting application");
+    client.say(hostChannel, "Exiting application");
     client.disconnect();
     process.exit();
 }
