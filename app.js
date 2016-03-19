@@ -9,57 +9,76 @@ var admins = config.admins;
 var channelsFile = config.channelsFile;
 var channels = {};
 var priorities = {};
-var hostChannel = config.tmi.channels[0] || config.tmi.identity.username;
-var clientId = config.clientId;
+var hostChannel = config.tmi.channels[0] || ("#" + config.tmi.identity.username);
+var clientId = config.clientId || ""; // A client ID technically isn't necessary, but it's nice to include to prevent rate-limits: https://github.com/justintv/Twitch-API#rate-limits
 var interval = null;
 
 var commands = {
-    "!addstreamer": function(params) {
-        var channel = params[1];
-        var priority = (params[2] && parseInt(params[2]) || 0);
+    "!addstreamer": function(params, cb) {
+        var channel = params[0];
+        var priority = (params[1] && parseInt(params[1]) || 0);
         if(channel) {
             var sharedPriorities = (priorities[priority] || []);
+            channel = channel.toLowerCase();
             if(channels[channel]) {
                 var oldPriority = channels[channel];
-                var getIndex = sharedPriorities.indexOf(channel);
-                if(getIndex > -1) {
-                    sharedPriorities.splice(getIndex, 1);
+                var oldIndex = priorities[oldPriority].indexOf(channel);
+                if(oldIndex > -1) {
+                    priorities[oldPriority].splice(oldIndex, 1);
                 }
             }
-            channel = channel.toLowerCase();
             channels[channel] = priority;
             sharedPriorities.push(channel);
             priorities[priority] = sharedPriorities;
             saveChannels();
-            return "Successfully added \"" + channel + "\" with priority: " + priority;
+            cb("Successfully added \"" + channel + "\" with priority: " + priority);
+            return;
         }
-        return "Missing parameter: channel";
+        cb("Missing parameter: channel");
+        return;
     },
-    "!removestreamer": function(params) {
-        var channel = params[1];
+    "!removestreamer": function(params, cb) {
+        var channel = params[0];
         if(channel) {
             channel = channel.toLowerCase();
-            if(channels[channel]) {
+            if(channels[channel] !== undefined) {
                 var priority = channels[channel];
                 priorities[priority].splice(priorities[priority].indexOf(channel), 1);
                 delete channels[channel];
                 saveChannels();
-                return "Successfully removed \"" + channel + "\"";
+                cb("Successfully removed \"" + channel + "\"");
+                return;
             }
-            return channel + " is not on the channel list";
+            cb(channel + " is not on the channel list");
+            return;
         }
-        return "Missing parameter: channel";
+        cb("Missing parameter: channel");
+        return;
     },
-    "!listpriorities": function(params) {
-        var priority = params[1];
+    "!listpriorities": function(params, cb) {
+        var priority = params[0];
         if(priority) {
             priority = parseInt(priority);
-            if(priorities[priority]) {
-                return priorities[priority].join(", ");
+            if(priorities[priority] && priorities[priority].length > 0) {
+                cb(priorities[priority].join(", "));
+                return;
             }
-            return "No channels listed under priority: " + priority;
+            cb("No channels listed under priority: " + priority);
+            return;
         }
-        return "Missing parameter: priority";
+        cb("Missing parameter: priority");
+        return;
+    },
+    "!host": function() {
+        hostNewChannel();
+    },
+    "!rehost": function() {
+        hostNewChannel();
+    },
+    "!status": function(params, cb) {
+        checkHosting(function(error, response, body) {
+            cb("Currently hosting: " + body);
+        });
     }
 };
 
@@ -80,41 +99,78 @@ function saveChannels() {
     });
 }
 
-function pickPrioritizedChannel(callback) {
+function checkHosting(callback) {
+    var url = 'https://decapi.me/twitch/hosting?channel=' + hostChannel.replace("#", "");
+    request(url, callback);
+}
+
+function getLiveChannels(callback) {
     var allChannels = Object.keys(channels);
+    var liveChannels = [];
+    var count = 0;
     var parameters = [
-        'channel=' + allChannels.join(","),
         'limit=100',
         'stream_type=live',
         'client_id=' + clientId
     ];
-    request('https://api.twitch.tv/kraken/streams?' + parameters.join("&"), callback);
+    _.each(allChannels, function(channel, index) {
+        request('https://api.twitch.tv/kraken/streams/' + channel + "?" + parameters.join("&"), function(error, response, body) {
+            body = JSON.parse(body);
+            if(body.stream) {
+                liveChannels.push(channel);
+            }
+
+            if(index === (allChannels.length - 1)) {
+                callback(liveChannels);
+            }
+        });
+    });
+}
+
+function pickPrioritizedChannel(liveChannels, cb) {
+    var priorities = {};
+    _.each(liveChannels, function(channel, index) {
+        var priority = channels[channel];
+        if(!priorities[priority]) {
+            priorities[priority] = [];
+        }
+        priorities[priority].push(channel);
+
+        if(index === (liveChannels.length - 1)) {
+            var highest = Object.keys(priorities).sort(function(a, b) {return a - b;}).reverse()[0];
+            var chan = randArray(priorities[highest]);
+            cb(chan);
+        }
+    });
 }
 
 function hostNewChannel() {
-    var liveChannels = [];
-    pickPrioritizedChannel(function(error, response, body) {
-        body = JSON.parse(body);
-        if(body.streams && body.streams.length > 0) {
-            _.each(body.streams, function(data) {
-                var channelName = data.channel.name;
-                liveChannels.push(channelName);
+    clearInterval(interval);
+    getLiveChannels(function(liveChannels) {
+        console.log("Fetched live channels: " + (liveChannels.length === 0 ? "No one is live" : liveChannels.join(", ")));
+        if(liveChannels.length > 0) {
+            pickPrioritizedChannel(liveChannels, function(priorityChannel) {
+                client.host(hostChannel, priorityChannel);
+                //client.say(hostChannel, "Hosting channel: " + priorityChannel);
+                console.log("Hosting channel: " + priorityChannel);
             });
-            if(liveChannels.length > 0) {
-                // TODO: Sort through priorities of channels.
-                // Host top-prioritized channel or pick random of top prioritized channels if multiple
-                return;
-            }
+        } else {
+            startTimer(300000);
         }
-       startTimer(300000);
     });
 }
 
 function startTimer(delay) {
+    console.log("Started timer");
     interval = setInterval(function () {
         hostNewChannel();
-        clearInterval(interval);
+        console.log("Cleared timer");
     }, delay);
+}
+
+function randArray(array) {
+    // Credit: http://stackoverflow.com/a/4550514
+    return array[Math.floor(Math.random() * array.length)];
 }
 
 loadChannels(function(data) {
@@ -125,16 +181,41 @@ loadChannels(function(data) {
         }
         priorities[priority].push(channel);
     });
+    console.log("Channels have been loaded.");
+    checkHosting(function(error, response, body) {
+        console.log("Fetching host info");
+        if(body === 'None') {
+            // If channel isn't hosting anyone at the time of boot, host new channel.
+            console.log("Attempting to host a channel");
+            hostNewChannel();
+        } else {
+            console.log("Already hosting: " + body);
+        }
+    });
 });
 
 client.connect();
+
+if(!config.tmi.channels || config.tmi.channels.length === 0) {
+    client.join(hostChannel);
+}
+
 client.on('chat', function(channel, user, msg, isSelf) {
     if(!isSelf && admins.indexOf(user.username) !== -1) {
         var split = msg.split(" ");
-        var command = split[0];
+        var command = split[0].toLowerCase();
+
+        if(command === "!quit") {
+            client.say(hostChannel, user['display-name'] + " - Exiting application");
+            client.disconnect();
+            process.exit();
+        }
+
         if(commands[command]) {
             var params = split.splice(1);
-            client.say(channel, user["display-name"] + " - " + commands[command](params) + ".");
+            commands[command](params, function(message, data) {
+                client.say(channel, user["display-name"] + " - " + message + ".");
+            });
         }
     }
 });
