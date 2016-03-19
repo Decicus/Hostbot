@@ -80,7 +80,9 @@ var commands = {
             cb("Currently hosting: " + body);
         });
     },
-    "!quit": quit()
+    "!quit": function() {
+        quit();
+    }
 };
 
 function quit() {
