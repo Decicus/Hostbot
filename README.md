@@ -13,6 +13,7 @@ Commands, by default, all require the users that wish to use it to be an 'admin'
 The format of commands will be `<required parameter>` and `[optional parameter]`. The rest are static keywords.
 
 - `!addstreamer <channel name> [priority]` - Adds a streamer to the list of channels to be hosted. `[priority]` can be any number, but if it's not specified it defaults to 0.
+    - If a streamer is already added, this will update their `priority`.
 - `!removestreamer <channel name>` - Removes a streamer from the list of channels to be hosted.
 - `!listpriorities <priority>` - Lists what channels are listed under `<priority>`, if any.
 - `!host` - Hosts a new channel by sorting through the priorities, regardless if any channel is being hosted or not.
