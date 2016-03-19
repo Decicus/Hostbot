@@ -79,8 +79,15 @@ var commands = {
         checkHosting(function(error, response, body) {
             cb("Currently hosting: " + body);
         });
-    }
+    },
+    "!quit": quit()
 };
+
+function quit() {
+    client.say(hostChannel, user['display-name'] + " - Exiting application");
+    client.disconnect();
+    process.exit();
+}
 
 function loadChannels(callback) {
     fs.readFile(channelsFile, 'utf8', function(error, data) {
@@ -205,12 +212,6 @@ client.on('chat', function(channel, user, msg, isSelf) {
         var split = msg.split(" ");
         var command = split[0].toLowerCase();
 
-        if(command === "!quit") {
-            client.say(hostChannel, user['display-name'] + " - Exiting application");
-            client.disconnect();
-            process.exit();
-        }
-
         if(commands[command]) {
             var params = split.splice(1);
             commands[command](params, function(message, data) {
@@ -228,4 +229,8 @@ client.on('notice', function(channel, id, message) {
 
 client.on('unhost', function() {
     hostNewChannel();
+});
+
+process.on('SIGTERM', function() {
+    quit();
 });
