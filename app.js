@@ -205,9 +205,11 @@ loadChannels(function(data) {
 
 client.connect();
 
-if(!config.tmi.channels || config.tmi.channels.length === 0) {
-    client.join(hostChannel);
-}
+client.on('logon', function() {
+    if(!config.tmi.channels || config.tmi.channels.length === 0) {
+        client.join(hostChannel);
+    }
+});
 
 client.on('chat', function(channel, user, msg, isSelf) {
     if(!isSelf && admins.indexOf(user.username) !== -1) {
