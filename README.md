@@ -18,6 +18,8 @@ The format of commands will be `<required parameter>` and `[optional parameter]`
 - `!listpriorities <priority>` - Lists what channels are listed under `<priority>`, if any.
 - `!host` - Hosts a new channel by sorting through the priorities, regardless if any channel is being hosted or not.
 - `!rehost` - An alias of `!host`.
+- `!unhost` - Unhosts the current channel.
+    - **NOTE**: Due to the way the bot detects unhosting of channels, this will automatically trigger a rehost if a prioritized channel is live. This is only really useful if you've removed a streamer from the priority list and wish to unhost when no one else is live on the priority list.
 - `!status` - Replies with who is currently being hosted, if anyone.
 - `!quit` - **WARNING**: This will *quit* the application completely and requires it to be restarted for commands/hosting to function if used.
 

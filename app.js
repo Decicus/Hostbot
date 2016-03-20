@@ -75,6 +75,9 @@ var commands = {
     "!rehost": function() {
         hostNewChannel();
     },
+    "!unhost": function() {
+        client.unhost(hostChannel);
+    },
     "!status": function(params, cb) {
         checkHosting(function(error, response, body) {
             cb("Currently hosting: " + body);
@@ -160,7 +163,6 @@ function hostNewChannel() {
         if(liveChannels.length > 0) {
             pickPrioritizedChannel(liveChannels, function(priorityChannel) {
                 client.host(hostChannel, priorityChannel);
-                //client.say(hostChannel, "Hosting channel: " + priorityChannel);
                 console.log("Hosting channel: " + priorityChannel);
             });
         } else {
