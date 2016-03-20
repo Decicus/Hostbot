@@ -13,5 +13,8 @@
     "tmi.js": "0.0.28",
     "underscore": "^1.8.3"
   },
-  "repository": "git@gitlab.com:Decicus/Hostbot.git"
+  "repository": {
+      "type": "git",
+      "url": "git+ssh://git@github.com/Decicus/Hostbot.git"
+  }
 }
