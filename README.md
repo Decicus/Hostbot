@@ -43,5 +43,6 @@ The format of commands will be `<required parameter>` and `[optional parameter]`
 ## Changelog
 ### Version 0.0.2:
 - Automatic rehosting when the channel that was hosted goes offline is now delayed with 15 seconds, due to the fact the Twitch API isn't instant on updating live status.
+
 ### Version 0.0.1:
 - Initial release.
