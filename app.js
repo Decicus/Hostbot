@@ -229,7 +229,9 @@ client.on('chat', function(channel, user, msg, isSelf) {
 
 client.on('notice', function(channel, id, message) {
     if(id === 'host_target_went_offline') {
-        hostNewChannel();
+        setTimeout(function () {
+            hostNewChannel();
+        }, 15000); // Set a delay, since Twitch API is sometimes extremely slow on updating when someone goes offline.
     }
 });
 

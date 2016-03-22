@@ -3,6 +3,7 @@ This is a simple hostbot that will automatically host a list of given channels, 
 
 ## Features
 - Continuous hosting of channels per the priority list. Once a channel goes offline, it will automatically attempt to find a new live channel to host following the priorities in the priority list.
+    - Due to the Twitch API sometimes being a bit slow on updating "live" status of a stream, the automatic rehost will trigger 15 seconds after a host has ended due to the channel going offline.
 - Priority levels go from highest number to lowest. If no priority is specified when a channel is added, then the priority will be 0.
 - Each priority level can contain either one or multiple channels.
     - If the highest priority level with live channels have multiple channels currently live, it will pick a random live channel from the specific priority level.
@@ -38,3 +39,9 @@ The format of commands will be `<required parameter>` and `[optional parameter]`
 ## Notes
 - The channel used for hosting is always the first index in `config.tmi.channels`. This way you can specify which channel to host with, but still allow use of commands in different channels.
     - If no channels are specified in `config.tmi.channels` then it will default back to the username. This channel will also be automatically joined on startup if no other channels are specified in `config.tmi.channels`.
+
+## Changelog
+### Version 0.0.2:
+- Automatic rehosting when the channel that was hosted goes offline is now delayed with 15 seconds, due to the fact the Twitch API isn't instant on updating live status.
+### Version 0.0.1:
+- Initial release.
