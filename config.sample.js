@@ -5,7 +5,7 @@ config.tmi = {
         debug: false
     },
     connection: {
-        cluster: "chat",
+        cluster: "aws",
         reconnect: true
     },
     identity: {

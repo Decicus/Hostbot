@@ -41,6 +41,10 @@ The format of commands will be `<required parameter>` and `[optional parameter]`
     - If no channels are specified in `config.tmi.channels` then it will default back to the username. This channel will also be automatically joined on startup if no other channels are specified in `config.tmi.channels`.
 
 ## Changelog
+### Version 0.1.0:
+- Modified how hosts are retrieved.
+- Added workaround for host notifications not properly working.
+
 ### Version 0.0.2.1:
 - Automatic rehosting's delay has been updated from 15 seconds to 120 seconds (2 minutes), as the Twitch API seems extremely slow when it comes to updating at times.
 
