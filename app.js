@@ -11,7 +11,10 @@ var channels = {};
 var priorities = {};
 var hostChannel = config.tmi.channels[0] || ("#" + config.tmi.identity.username);
 var clientId = config.clientId || ""; // A client ID technically isn't necessary, but it's nice to include to prevent rate-limits: https://github.com/justintv/Twitch-API#rate-limits
-var interval = null;
+var interval = {
+    streams: null,
+    hosting: null
+};
 
 var commands = {
     "!addstreamer": function(params, cb) {
@@ -80,7 +83,8 @@ var commands = {
     },
     "!status": function(params, cb) {
         checkHosting(function(error, response, body) {
-            cb("Currently hosting: " + body);
+            body = JSON.parse(body);
+            cb("Currently hosting: " + (body.hosts[0].target_login || 'None'));
         });
     },
     "!quit": function() {
@@ -112,8 +116,12 @@ function saveChannels() {
 }
 
 function checkHosting(callback) {
-    var url = 'https://decapi.me/twitch/hosting?channel=' + hostChannel.replace("#", "");
-    request(url, callback);
+    request("https://api.twitch.tv/kraken/channels/" + hostChannel.replace("#", ""), function(err, response, body) {
+        body = JSON.parse(body);
+        var id = body._id;
+        var url = 'https://tmi.twitch.tv/hosts?include_logins=1&host=' + id;
+        request(url, callback);
+    });
 }
 
 function getLiveChannels(callback) {
@@ -157,13 +165,26 @@ function pickPrioritizedChannel(liveChannels, cb) {
 }
 
 function hostNewChannel() {
-    clearInterval(interval);
+    clearInterval(interval.streams);
     getLiveChannels(function(liveChannels) {
         console.log("Fetched live channels: " + (liveChannels.length === 0 ? "No one is live" : liveChannels.join(", ")));
         if(liveChannels.length > 0) {
             pickPrioritizedChannel(liveChannels, function(priorityChannel) {
                 client.host(hostChannel, priorityChannel);
                 console.log("Hosting channel: " + priorityChannel);
+                console.log("Started timer for host-checking");
+                interval.hosting = setInterval(function() {
+                    checkHosting(function(error, response, body) {
+                        body = JSON.parse(body);
+                        if(!body.hosts[0].target_login) {
+                            clearInterval(interval.hosting);
+                            console.log("Cleared timer for host-checking");
+                            hostNewChannel();
+                        } else {
+                            console.log("Still hosting: " + body.hosts[0].target_login + " - Host-checking timer will restart");
+                        }
+                    });
+                }, 300000);
             });
         } else {
             startTimer(300000);
@@ -172,10 +193,10 @@ function hostNewChannel() {
 }
 
 function startTimer(delay) {
-    console.log("Started timer");
-    interval = setInterval(function () {
+    console.log("Started timer for checking of live streams");
+    interval.streams = setInterval(function () {
         hostNewChannel();
-        console.log("Cleared timer");
+        console.log("Cleared timer for checking of live streams");
     }, delay);
 }
 
@@ -194,13 +215,14 @@ loadChannels(function(data) {
     });
     console.log("Channels have been loaded.");
     checkHosting(function(error, response, body) {
+        body = JSON.parse(body);
         console.log("Fetching host info");
-        if(body === 'None') {
+        if(!body.hosts[0].target_login) {
             // If channel isn't hosting anyone at the time of boot, host new channel.
             console.log("Attempting to host a channel");
             hostNewChannel();
         } else {
-            console.log("Already hosting: " + body);
+            console.log("Already hosting: " + body.hosts[0].target_login);
         }
     });
 });

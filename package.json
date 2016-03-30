@@ -1,6 +1,6 @@
 {
   "name": "twitch-hostbot",
-  "version": "0.0.2.1",
+  "version": "0.1.0",
   "description": "A Twitch chatbot just for hosting channels",
   "main": "app.js",
   "scripts": {
