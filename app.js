@@ -15,6 +15,7 @@ var interval = {
     streams: null,
     hosting: null
 };
+var lastChannel = null;
 
 var commands = {
     "!addstreamer": function(params, cb) {
@@ -171,20 +172,9 @@ function hostNewChannel() {
         if(liveChannels.length > 0) {
             pickPrioritizedChannel(liveChannels, function(priorityChannel) {
                 client.host(hostChannel, priorityChannel);
+                lastChannel = priorityChannel;
                 console.log("Hosting channel: " + priorityChannel);
-                console.log("Started timer for host-checking");
-                interval.hosting = setInterval(function() {
-                    checkHosting(function(error, response, body) {
-                        body = JSON.parse(body);
-                        if(!body.hosts[0].target_login) {
-                            clearInterval(interval.hosting);
-                            console.log("Cleared timer for host-checking");
-                            hostNewChannel();
-                        } else {
-                            console.log("Still hosting: " + body.hosts[0].target_login + " - Host-checking timer will restart");
-                        }
-                    });
-                }, 300000);
+                startHostTimer(300000);
             });
         } else {
             startTimer(300000);
@@ -197,6 +187,27 @@ function startTimer(delay) {
     interval.streams = setInterval(function () {
         hostNewChannel();
         console.log("Cleared timer for checking of live streams");
+    }, delay);
+}
+
+function startHostTimer(delay) {
+    console.log("Started timer for host-checking");
+    interval.hosting = setInterval(function() {
+        checkHosting(function(error, response, body) {
+            body = JSON.parse(body);
+            var host = body.hosts[0];
+            if(!host.target_login) {
+                clearInterval(interval.hosting);
+                if(lastChannel) {
+                    console.log("Currently not hosting anyone - Executing /unhost command.");
+                    client.unhost(hostChannel); // Do the /unhost command, so the "unhost" event triggers.
+                } else {
+                    hostNewChannel();
+                }
+            } else {
+                console.log("Still hosting: " + host.target_login + " - Host-checking timer will restart");
+            }
+        });
     }, delay);
 }
 
@@ -216,13 +227,14 @@ loadChannels(function(data) {
     console.log("Channels have been loaded.");
     checkHosting(function(error, response, body) {
         body = JSON.parse(body);
+        var host = body.hosts[0];
         console.log("Fetching host info");
-        if(!body.hosts[0].target_login) {
+        if(!host.target_login) {
             // If channel isn't hosting anyone at the time of boot, host new channel.
             console.log("Attempting to host a channel");
             hostNewChannel();
         } else {
-            console.log("Already hosting: " + body.hosts[0].target_login);
+            console.log("Already hosting: " + host.target_login);
         }
     });
 });
@@ -252,6 +264,7 @@ client.on('chat', function(channel, user, msg, isSelf) {
 client.on('notice', function(channel, id, message) {
     if(id === 'host_target_went_offline') {
         setTimeout(function () {
+            lastChannel = null;
             hostNewChannel();
         }, 120000); // Set a delay, since Twitch API is sometimes extremely slow on updating when someone goes offline.
     }
