@@ -16,6 +16,7 @@ var interval = {
     hosting: null
 };
 var lastChannel = null;
+var queuedHost = false;
 
 var commands = {
     "!addstreamer": function(params, cb) {
@@ -263,15 +264,21 @@ client.on('chat', function(channel, user, msg, isSelf) {
 
 client.on('notice', function(channel, id, message) {
     if(id === 'host_target_went_offline') {
+        queuedHost = true;
         setTimeout(function () {
             lastChannel = null;
+            queuedHost = false;
             hostNewChannel();
-        }, 120000); // Set a delay, since Twitch API is sometimes extremely slow on updating when someone goes offline.
+        }, 180000); // Set a delay, since Twitch API is sometimes extremely slow on updating when someone goes offline.
     }
 });
 
 client.on('unhost', function() {
-    hostNewChannel();
+    setTimeout(function() {
+        if (!queuedHost) {
+            hostNewChannel();
+        }
+    }, 5000);
 });
 
 process.on('SIGTERM', function() {
