@@ -30,7 +30,7 @@ The format of commands will be `<required parameter>` and `[optional parameter]`
 - Rename `config.sample.js` to `config.js` and edit the info of `config.js`
     - Generally speaking, you only need to modify `username` & `password` inside `config.tmi`, as well as `channels` for auto-connecting channels.
     - If the bot doesn't seem to receive/respond to messages, make sure you're on the right [chat cluster](https://discuss.dev.twitch.tv/t/psa-chat-servers-are-going-to-migrate-to-aws-ec2-servers/4877/107).
-    - `clientId` requires a [Twitch developer application](https://secure.twitch.tv/settings/connections) - This isn't necessary for the time being, but is still highly recommended.
+    - `clientId` requires a [Twitch developer application](https://secure.twitch.tv/settings/connections) - As of September 2016, the [client ID is **now required** for all API requests](https://blog.twitch.tv/client-id-required-for-kraken-api-calls-afbb8e95f843#.m73g3zxx9), which also affects this.
 - Launch bot with `node app.js`
 
 ## License
@@ -41,6 +41,9 @@ The format of commands will be `<required parameter>` and `[optional parameter]`
     - If no channels are specified in `config.tmi.channels` then it will default back to the username. This channel will also be automatically joined on startup if no other channels are specified in `config.tmi.channels`.
 
 ## Changelog
+### Version 0.1.1:
+- Hotfix for crash when the bot attempts to check hosts.
+
 ### Version 0.1.0:
 - Modified how hosts are retrieved.
 - Added workaround for host notifications not properly working.

@@ -118,10 +118,10 @@ function saveChannels() {
 }
 
 function checkHosting(callback) {
-    request("https://api.twitch.tv/kraken/channels/" + hostChannel.replace("#", ""), function(err, response, body) {
+    request("https://api.twitch.tv/kraken/channels/" + hostChannel.replace("#", "") + "?client_id=" + clientId, function(err, response, body) {
         body = JSON.parse(body);
         var id = body._id;
-        var url = 'https://tmi.twitch.tv/hosts?include_logins=1&host=' + id;
+        var url = 'https://tmi.twitch.tv/hosts?include_logins=1&host=' + id + "&client_id=" + clientId;
         request(url, callback);
     });
 }

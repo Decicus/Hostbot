@@ -6,7 +6,8 @@ config.tmi = {
     },
     connection: {
         cluster: "aws",
-        reconnect: true
+        reconnect: true,
+        secure: true
     },
     identity: {
         username: 'decicus',
