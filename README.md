@@ -1,3 +1,5 @@
+## **Note:** This project is no longer being maintained.
+
 # Hostbot
 This is a simple hostbot that will automatically host a list of given channels, sorted by their priorities, when they go online. It will keep hosting a channel until it goes offline and then re-host a new channel afterwards.
 
